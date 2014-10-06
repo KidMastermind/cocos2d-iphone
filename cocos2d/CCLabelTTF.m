@@ -153,20 +153,44 @@
 	return _string;
 }
 
-- (NSString*) getFontName:(NSString*)fontName
+- (NSString *)getFontName:(NSString *)fontName
 {
-	// Custom .ttf file ?
-    if ([[fontName lowercaseString] hasSuffix:@".ttf"])
-    {
-        // This is a file, register font with font manager
-        NSString* fontFile = [[CCFileUtils sharedFileUtils] fullPathForFilename:fontName];
-        NSURL* fontURL = [NSURL fileURLWithPath:fontFile];
-        CTFontManagerRegisterFontsForURL((CFURLRef)fontURL, kCTFontManagerScopeProcess, NULL);
+	// Custom .ttf file?
+	if ([[fontName lowercaseString] hasSuffix:@".ttf"])
+	{
+		// This is a file, register font with font manager.
+		NSString *fontPath = [[CCFileUtils sharedFileUtils] fullPathForFilename:fontName];
+		NSCAssert(fontPath != nil, @"FontFile can not be located");
 
-		return [[fontFile lastPathComponent] stringByDeletingPathExtension];
-    }
+		NSURL *fontURL = [NSURL fileURLWithPath:fontPath];
+		CTFontManagerRegisterFontsForURL((CFURLRef)fontURL, kCTFontManagerScopeProcess, NULL);
 
-    return fontName;
+#ifdef APPORTABLE
+		BOOL needsCGFontFailback = NO;
+#elif __CC_PLATFORM_MAC
+		BOOL needsCGFontFailback = NO;
+#elif __CC_PLATFORM_IOS
+		BOOL needsCGFontFailback = [[UIDevice currentDevice].systemVersion compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending;
+#endif
+		if (!needsCGFontFailback) {
+			CFArrayRef descriptors = CTFontManagerCreateFontDescriptorsFromURL((__bridge CFURLRef)fontURL);
+			if (!descriptors || (CFArrayGetCount(descriptors) < 1)) {
+				return nil;
+			}
+			CTFontDescriptorRef descriptor = CFArrayGetValueAtIndex(descriptors, 0);
+			fontName = (__bridge NSString *)CTFontDescriptorCopyAttribute(descriptor, kCTFontNameAttribute);
+			CFRelease(descriptors);
+		} else {
+			CGDataProviderRef fontDataProvider = CGDataProviderCreateWithURL((__bridge CFURLRef)fontURL);
+			CGFontRef loadedFont = CGFontCreateWithDataProvider(fontDataProvider);
+			fontName = (__bridge NSString *)CGFontCopyPostScriptName(loadedFont);
+
+			CGFontRelease(loadedFont);
+			CGDataProviderRelease(fontDataProvider);
+		}
+	}
+
+	return fontName;
 }
 
 - (void)setFontName:(NSString*)fontName
