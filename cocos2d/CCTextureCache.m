@@ -299,8 +299,11 @@ static CCTextureCache *sharedTextureCache;
 
 		else {
 
-			UIImage *image = [[UIImage alloc] initWithContentsOfFile:fullpath];
+			NSData *data = [[NSData alloc] initWithContentsOfFile:fullpath];
+			UIImage *image = [[UIImage alloc] initWithData:data];
 			tex = [[CCTexture2D alloc] initWithCGImage:image.CGImage resolutionType:resolution];
+
+			[data release];
 			[image release];
 
 			if( tex ){
