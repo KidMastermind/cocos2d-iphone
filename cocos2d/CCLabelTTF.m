@@ -170,7 +170,7 @@
 #elif __CC_PLATFORM_MAC
 		BOOL needsCGFontFailback = NO;
 #elif __CC_PLATFORM_IOS
-		BOOL needsCGFontFailback = [[UIDevice currentDevice].systemVersion compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending;
+		BOOL needsCGFontFailback = [[UIDevice currentDevice].systemVersion compare:@"7.0" options:NSNumericSearch] == NSOrderedAscending;
 #endif
 		if (!needsCGFontFailback) {
 			CFArrayRef descriptors = CTFontManagerCreateFontDescriptorsFromURL((__bridge CFURLRef)fontURL);
